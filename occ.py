@@ -28,6 +28,7 @@ class occ():
         self.model = None
         self.X = None
         self.Y = None
+        self.score = None
         #self.X_train = None
         #self.Y_train = None
         #self.X_test = None
@@ -55,8 +56,9 @@ class occ():
         
     
     def train(self, model='ocsvm', data=None, **kwargs):
-        if data == None:
-            data = self.X
+        if type(data) != np.ndarray:
+            if data == None:
+                data = self.X
         kernel_set = 'poly'
         gamma_set = 'scale'
         epoches = 10
@@ -81,19 +83,25 @@ class occ():
         self.model.fit(data)
     
     def predict(self, data=None, **kwargs):
-        if data == None:
-            data = self.X
+        if type(data) != np.ndarray:
+            if data == None:
+                data = self.X
         data = self.select_data(data, **kwargs)
         return self.model.predict(data)
     
-    def score(self):
-        return self.model.score_samples(self.X)
+    def get_score(self, data=None, **kwargs):
+        if type(data) != np.ndarray:
+            if data == None:
+                data = self.X
+        data = self.select_data(data, **kwargs)
+        return self.model.score_samples(data)
     
-    def export_score(self):
-        if self.Y == None:
-            array = np.concatenate(self.X, self.score)
-        array = np.concatenate(self.X, self.Y, self.score)
-        print(array)
+    def export_score(self, file_name, **kwargs):
+        if type(self.Y) != np.ndarray:
+            if self.Y == None:
+                array = np.concatenate((self.X, self.get_score(**kwargs)), axis=1)
+        array = np.concatenate((self.X, self.Y, self.get_score(**kwargs)), axis=1)
+        pd.DataFrame(array).to_csv(file_name, header=None, index=False)
     
     @staticmethod
     def select_data(data, **kwargs):
@@ -241,7 +249,7 @@ class ocnn():
         """
         
         """
-        if self.predictions == None:
+        if type(self.predictions) == np.ndarray:
             self.predict(X)
         return self.predictions
     
@@ -251,8 +259,8 @@ class ocnn():
                                       use_bias=False,
                                       kernel_initializer="glorot_normal",
                                       kernel_regularizer=tfk.regularizers.l2(0.5),
-                                      name="hidden_layer",
-                                      activation=tf.nn.leaky_relu)
+                                      name="hidden_layer",)
+                                      #activation=tf.nn.leaky_relu)
 
         # Define Dense layer from hidden to output
         self.output_layer = tfkl.Dense(1,
