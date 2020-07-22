@@ -1,6 +1,7 @@
 from occ import *
+from occ_diff import *
 
-class occ_diff(occ):
+class occ_variant(occ):
     def __init__(self):
         super().__init__()
         self.raw_X = None
@@ -8,7 +9,8 @@ class occ_diff(occ):
     def load_data_csv(self, file_name, Y=False, **kwargs):
         super().load_data_csv(file_name, Y=Y, **kwargs)
         self.raw_X = self.X
-        self.X = np.diff(self.X)
+        mean = np.mean(self.raw_X, axis=1).reshape([len(self.X),1])
+        self.X = self.X - mean
         
     def export_score(self, file_name, **kwargs):
         if type(self.Y) != np.ndarray:

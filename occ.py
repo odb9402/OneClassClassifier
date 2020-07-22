@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import scipy
 import pandas as pd
+import random
 from scipy import io
 from sklearn.model_selection import train_test_split as train_test_split
 from sklearn.decomposition import PCA as PCA
@@ -23,6 +24,9 @@ tf.test.is_gpu_available()
 #gpus = tf.config.experimental.list_physical_devices('GPU')
 
 class occ():
+    """
+    
+    """
     def __init__(self):
         self.data = None
         self.model = None
@@ -53,15 +57,25 @@ class occ():
             self.Y = data[data.shape[1]-1].to_numpy().reshape([data.shape[0],1])
         else:
             self.X = data[range(data.shape[1])].values
-        
     
-    def train(self, model='ocsvm', data=None, **kwargs):
+        
+    def train(self, model='ocsvm', data=None, sampling=False, **kwargs):
+        """
+        
+        :param sampling: (float) Proportion of sampling. If the raw data size is too large,
+            we can use the sampled datasets.
+        
+        """
         if type(data) != np.ndarray:
             if data == None:
                 data = self.X
+        if sampling != False:
+            data = occ.sampling_X(self.X, rate=sampling)
         kernel_set = 'poly'
         gamma_set = 'scale'
         epoches = 10
+        batch_size = 50
+        nu = 0.05
         
         for k, v in kwargs.items():
             if 'kernel' == k:
@@ -70,11 +84,15 @@ class occ():
                 gamma_set = v
             if 'epoches' == k:
                 epoches = v
+            if 'nu' == k:
+                nu = v
+            if 'batch_size' == k:
+                batch_size = v
                 
         if model=='ocsvm':
-            self.model = sklearn.svm.OneClassSVM(gamma=gamma_set, kernel=kernel_set, nu=0.1)
+            self.model = sklearn.svm.OneClassSVM(gamma=gamma_set, kernel=kernel_set, nu=nu)
         elif model=='ocnn':
-            self.model = ocnn(len(data[0]), epoches=epoches)
+            self.model = ocnn(len(data[0]), epoches=epoches, nu=nu, batch_size=batch_size)
         else:
             print("There is no such model type {}".format(model))
         
@@ -94,7 +112,7 @@ class occ():
             if data == None:
                 data = self.X
         data = self.select_data(data, **kwargs)
-        return self.model.score_samples(data)
+        return self.model.score_samples(data).reshape(len(data),1)
     
     def export_score(self, file_name, **kwargs):
         if type(self.Y) != np.ndarray:
@@ -168,6 +186,11 @@ class occ():
     def proportion(data):
         return np.where(data < 0)
 
+    @staticmethod 
+    def sampling_X(X, rate=0.1):
+        idx = list(range(len(X)))
+        random.shuffle(idx)
+        return X[idx[:int(len(X)*rate)]] 
     
 class custom_hinge_loss(tf.keras.losses.Loss):
     def __init__(self, nu, r):
@@ -197,7 +220,7 @@ class custom_hinge_loss(tf.keras.losses.Loss):
 
 
 class ocnn():
-    def __init__(self, input_dim, hidden_layer_size=32, batch_size=50, r=1.0, epoches=10):
+    def __init__(self, input_dim, hidden_layer_size=64, batch_size=50, r=1.0, epoches=10, nu=0.10):
         """
         :param input_dim: number of input features
         :param hidden_layer_size: number of neurons in the hidden layer
@@ -209,9 +232,9 @@ class ocnn():
         self.input_dim = input_dim
         self.hidden_size = hidden_layer_size
         self.r = r
-        self.batch_size = 50
+        self.batch_size = batch_size 
         self.epoches = epoches
-        self.nu = 0.1
+        self.nu = nu 
         self.build_model()
     
     def fit(self, X, init_lr=1e-4, save=False):
@@ -259,7 +282,7 @@ class ocnn():
                                       use_bias=False,
                                       kernel_initializer="glorot_normal",
                                       kernel_regularizer=tfk.regularizers.l2(0.5),
-                                      name="hidden_layer",)
+                                      name="hidden_layer")#,
                                       #activation=tf.nn.leaky_relu)
 
         # Define Dense layer from hidden to output
