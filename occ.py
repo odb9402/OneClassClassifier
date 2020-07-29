@@ -33,6 +33,10 @@ from pyod.models.lscp import LSCP
 from pyod.models.auto_encoder import AutoEncoder
 from pyod.models.vae import VAE 
 from suod.models.base import SUOD
+from numpy import ndarray
+from typing import Any
+from typing import Optional
+from tensorflow.python.framework.ops import EagerTensor
 
 matplotlib.style.use("ggplot")
 tf.test.is_gpu_available()
@@ -40,6 +44,17 @@ tf.test.is_gpu_available()
 
 class occ():
     """
+    One-class classifier for outlier detection.
+    
+    Attributes:
+        data
+        model
+        X
+        Y
+        score
+        X_proj
+    
+    Methods:
     
     """
     def __init__(self):
@@ -54,6 +69,7 @@ class occ():
         #self.Y_test = None
         
     def load_data_mat(self, file_name):
+        # type: (str) -> None
         self.data = scipy.io.loadmat(file_name)
         self.X = self.data['X']
         self.Y = self.data['y']
@@ -75,6 +91,7 @@ class occ():
     
         
     def train(self, model='ocsvm', data=None, sampling=False, **kwargs):
+        # type: (str, Optional[Any], bool, **Any) -> None
         """
         
         :param sampling: (float) Proportion of sampling. If the raw data size is too large,
@@ -90,7 +107,7 @@ class occ():
         gamma_set = 'scale'
         epochs = 10
         batch_size = 50
-        nu = 0.5
+        nu = 0.1
         hidden_neurons = [64,32,32,64]
         
         for k, v in kwargs.items():
@@ -127,6 +144,7 @@ class occ():
         self.model.fit(data)
     
     def predict(self, data=None, **kwargs):
+        # type: (Optional[Any], **Any) -> ndarray
         if type(data) != np.ndarray:
             if data == None:
                 data = self.X
@@ -149,6 +167,7 @@ class occ():
     
     @staticmethod
     def select_data(data, **kwargs):
+        # type: (ndarray, **Any) -> ndarray
         norm = False
         manipulate = False
         for k, v in kwargs.items():
@@ -164,6 +183,7 @@ class occ():
     
     @staticmethod
     def manipulation(data, **kwargs):
+        # type: (ndarray, **Any) -> ndarray
         method = 'pca'
         dim = 3
         for k, v in kwargs.items():
@@ -178,6 +198,7 @@ class occ():
         
     @staticmethod
     def show_projection(data, label=None, **kwargs):
+        # type: (ndarray, ndarray, **Any) -> None
         size = 25
         cmap = 'viridis'
         norm = False
@@ -205,6 +226,7 @@ class occ():
     
     @staticmethod
     def norm(data):
+        # type: (ndarray) -> ndarray
         norm = sklearn.preprocessing.Normalizer(norm='l2', copy=True).fit(data)
         return norm.transform(data)
     
@@ -260,7 +282,15 @@ class abstract_occ_model(metaclass=ABCMeta):
 
 
 class ocnn(abstract_occ_model):
-    def __init__(self, input_dim, hidden_layer_size=64, batch_size=50, r=1.0, epochs=10, nu=0.10):
+    def __init__(self,
+                 input_dim,  # type: int
+                 hidden_layer_size=32,  # type: int
+                 batch_size=50,  # type: int
+                 r=1.0,  # type: float
+                 epochs=10,  # type: int
+                 nu=0.10,  # type: float
+                 ):
+        # type: (...) -> None
         """
         :param input_dim: number of input features
         :param hidden_layer_size: number of neurons in the hidden layer
@@ -278,6 +308,7 @@ class ocnn(abstract_occ_model):
         self.build_model()
     
     def fit(self, X, init_lr=1e-4, save=False):
+        # type: (ndarray, float, bool) -> None
         """
         builds and trains the model on the supplied input data
         :param X: input training data
@@ -302,6 +333,7 @@ class ocnn(abstract_occ_model):
                             verbose=1)
         
     def predict(self, X, log=True):
+        # type: (ndarray, bool) -> ndarray
         y_hats = self.model.predict(X)
         r =  tfp.stats.percentile(tf.reduce_max(y_hats, axis=1), 100 * self.nu)
         print("r : {}".format(r))
@@ -317,13 +349,26 @@ class ocnn(abstract_occ_model):
         return self.predictions
     
     def build_model(self):
+        # type: () -> None
         self.model = tf.keras.Sequential()
         self.input_layer = tfkl.Dense(self.hidden_size,
                                       use_bias=False,
                                       kernel_initializer="glorot_normal",
                                       kernel_regularizer=tfk.regularizers.l2(0.5),
-                                      name="hidden_layer")#,
-                                      #activation=tf.nn.leaky_relu)
+                                      name="hidden_layer",
+                                      activation=tf.nn.leaky_relu)
+        self.layer_2 = tfkl.Dense(self.hidden_size,
+                                      use_bias=False,
+                                      kernel_initializer="glorot_normal",
+                                      kernel_regularizer=tfk.regularizers.l2(0.5),
+                                      name="hidden_layer",
+                                      activation=tf.nn.leaky_relu)
+        self.layer_3 = tfkl.Dense(self.hidden_size,
+                                      use_bias=False,
+                                      kernel_initializer="glorot_normal",
+                                      kernel_regularizer=tfk.regularizers.l2(0.5),
+                                      name="hidden_layer",
+                                      activation=tf.nn.leaky_relu)
 
         # Define Dense layer from hidden to output
         self.output_layer = tfkl.Dense(1,
@@ -336,6 +381,7 @@ class ocnn(abstract_occ_model):
         self.model.add(self.output_layer)
         
     def loss(self, y_true, y_pred):
+        # type: (EagerTensor, EagerTensor) -> EagerTensor
         y_pred_prev = y_pred
         loss_val = (1 / self.nu) * tf.keras.backend.mean(tf.keras.backend.maximum(0.0, self.r - y_pred), axis=-1)
         self.r = tfp.stats.percentile(tf.reduce_max(y_pred_prev, axis=1), 100 * self.nu)
@@ -392,6 +438,7 @@ class AutoEncoderOOD(abstract_occ_model):
     
     def score_samples(self, X):
         return -self.model.decision_function(X)
+    
     
 class VAE_ODD(AutoEncoderOOD):
     def __init__(self, hidden_neurons, nu, epochs):
