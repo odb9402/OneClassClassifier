@@ -41,13 +41,26 @@ class embeddedText():
         self.embedding_model = tfkl.Embedding(self.num_words, self.latent_dim)
         
         self.word_vec = []
-        for v in self.vectors:
-            self.word_vec.append(self.sentence_mean(self.embedding_model(np.array(v))))
+        i = 0
+        with pgb.ProgressBar(max_value=len(self.vectors)) as bar:
+            for v in self.vectors:
+                self.word_vec.append(self.sentence_vec(self.embedding_model(np.array(v)))) 
+                i += 1
+                bar.update(i)
         self.word_vec = np.array(self.word_vec)
         s = self.word_vec.shape
         self.word_vec = self.word_vec.reshape(s[0], s[-1])
         self.word_vec = self.mask_nan(self.word_vec)
         
+    @staticmethod
+    def sentence_vec(sentence_arr):
+        """
+        param: sentence_arr - A numpy array with wordvectors
+        """
+        sentence_sum = np.sum(sentence_arr, axis=1)
+        norm = np.linalg.norm(sentence_sum)
+        return sentence_sum/norm 
+    
     @staticmethod
     def sentence_mean(sentence_arr):
         """
@@ -65,6 +78,7 @@ class embeddedText():
     @staticmethod
     def mask_nan(array):
         return array[~np.isnan(array).any(axis=1)]
+        
         
 class amazoneText(embeddedText):
     """

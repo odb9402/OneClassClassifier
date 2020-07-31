@@ -69,6 +69,10 @@ class occ():
         #self.Y_test = None
         
     def load_data_mat(self, file_name):
+        """
+        Load data from .mat file.
+        Note that data from ODDS contains a lot of .mat data including known anomalies(Y)
+        """
         # type: (str) -> None
         self.data = scipy.io.loadmat(file_name)
         self.X = self.data['X']
@@ -149,7 +153,7 @@ class occ():
             if data == None:
                 data = self.X
         data = self.select_data(data, **kwargs)
-        return self.model.predict(data)
+        return self.model.predict(data).reshape(len(data),1)
     
     def get_score(self, data=None, **kwargs):
         if type(data) != np.ndarray:
@@ -158,12 +162,25 @@ class occ():
         data = self.select_data(data, **kwargs)
         return self.model.score_samples(data).reshape(len(data),1)
     
-    def export_score(self, file_name, **kwargs):
+    def export_csv(self, file_name, score):
         if type(self.Y) != np.ndarray:
             if self.Y == None:
-                array = np.concatenate((self.X, self.get_score(**kwargs)), axis=1)
-        array = np.concatenate((self.X, self.Y, self.get_score(**kwargs)), axis=1)
+                array = np.concatenate((self.X, score), axis=1)
+        else:
+            array = np.concatenate((self.X, self.Y, score), axis=1)
         pd.DataFrame(array).to_csv(file_name, header=None, index=False)
+    
+    def export_outliers(self, file_name, predictions):
+        def export(array):
+            pd.DataFrame(array[np.where(predictions == -1)[0]]).to_csv(file_name, header=None, index=False)
+            
+        if type(self.Y) != np.ndarray:
+            if self.Y == None:
+                export(self.X)
+        else:
+            X = self.X
+            Y = self.Y
+            export(np.concatenate((X,Y), axis=1))
     
     @staticmethod
     def select_data(data, **kwargs):
@@ -240,6 +257,7 @@ class occ():
         random.shuffle(idx)
         return X[idx[:int(len(X)*rate)]] 
     
+    
 class custom_hinge_loss(tf.keras.losses.Loss):
     def __init__(self, nu, r):
         super().__init__()
@@ -271,6 +289,7 @@ class abstract_occ_model(metaclass=ABCMeta):
     @abstractmethod
     def fit(self, X):
         pass 
+    
     @abstractmethod
     def predict(self, X):
         pass
@@ -279,7 +298,6 @@ class abstract_occ_model(metaclass=ABCMeta):
     def score_samples(self, X):
         pass
     
-
 
 class ocnn(abstract_occ_model):
     def __init__(self,
@@ -299,6 +317,7 @@ class ocnn(abstract_occ_model):
         self.model = None
         self.history = None
         self.opt = None
+        self.scores = None
         self.input_dim = input_dim
         self.hidden_size = hidden_layer_size
         self.r = r
@@ -334,19 +353,20 @@ class ocnn(abstract_occ_model):
         
     def predict(self, X, log=True):
         # type: (ndarray, bool) -> ndarray
-        y_hats = self.model.predict(X)
-        r =  tfp.stats.percentile(tf.reduce_max(y_hats, axis=1), 100 * self.nu)
-        print("r : {}".format(r))
-        self.predictions = (y_hats - r).numpy()
+        if type(self.scores) != np.ndarray:
+            self.score_samples(X)
+        self.predictions = np.where(self.scores>=0, 1 ,np.where(self.scores<0, -1, self.scores))
         return self.predictions 
     
     def score_samples(self, X):
         """
         
         """
-        if type(self.predictions) == np.ndarray:
-            self.predict(X)
-        return self.predictions
+        y_hats = self.model.predict(X)
+        r =  tfp.stats.percentile(tf.reduce_max(y_hats, axis=1), 100 * self.nu)
+        print("r : {}".format(r))
+        self.scores = (y_hats - r).numpy()
+        return self.scores
     
     def build_model(self):
         # type: () -> None
@@ -386,6 +406,7 @@ class ocnn(abstract_occ_model):
         loss_val = (1 / self.nu) * tf.keras.backend.mean(tf.keras.backend.maximum(0.0, self.r - y_pred), axis=-1)
         self.r = tfp.stats.percentile(tf.reduce_max(y_pred_prev, axis=1), 100 * self.nu)
         return loss_val
+    
     
 class ensemble(abstract_occ_model):
     """
