@@ -2,12 +2,16 @@
 
 Outlier detection using [One-class classifier](https://dongpin.data.blog/2020/07/30/anomaly-detection-with-occone-class-classification/). 
 
+## Install
+```python
+python setup.py install
+```
 
 
 ## Usage
 
 ```python
-from occ import *
+from occ.occ import *
 
 ## Load data
 ocsvm = occ()
