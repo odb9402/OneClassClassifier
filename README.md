@@ -27,7 +27,6 @@ Y_hat = ocsvm.predict(norm=True)
 ## Visualization of the results
 occ.show_projection(ocsvm.X, Y_scores, title="Score ocsvm with rbf kernel", markersize=100)
 occ.show_projection(ocsvm.X, Y_hat, title="Prediction ocsvm with rbf kernel", markersize=100)
-occ.show_projection(ocsvm.X, ocsvm.Y, title="Real", markersize=100, cmap='viridis_r')
 
 ## Export the result score and outliers
 ocsvm.export_outliers("outliers.csv", Y_hat) ## Raw data of outliers
