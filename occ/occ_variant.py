@@ -1,5 +1,5 @@
-from occ import *
-from occ_diff import *
+from occ.occ import *
+from occ.occ_diff import *
 
 class occ_variant(occ):
     def __init__(self):

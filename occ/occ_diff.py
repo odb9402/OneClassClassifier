@@ -1,4 +1,4 @@
-from occ import *
+from occ.occ import *
 
 class occ_diff(occ):
     def __init__(self):
