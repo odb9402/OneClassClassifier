@@ -23,9 +23,56 @@ class embeddedText():
         (static) sentence_mean : sentence_arr = 
         
     """
-    def __init__():
-        pass
+    def __init__(self):
+        self.word_vec = []
     
+    def glove_embedding(self, texts, file):
+        """
+        Using pre-trained word-vector model, glove
+        glove model can be downloaded from stanford nlp data repository:
+        
+        !wget http://nlp.stanford.edu/data/glove.6B.zip
+        
+        param: texts - Raw texts (sentence)
+        param: file - The input glove file : glove.6B.*.txt
+        
+        return: None
+        """
+        self.embedding_dict = dict()
+        glove_file = open(file)
+        for line in glove_file:
+            word_vector = line.split()
+            word = word_vector[0]
+            word_vector_arr = np.asarray(word_vector[1:], dtype='float32')
+            self.embedding_dict[word] = word_vector_arr
+        glove_file.close()
+        
+        i = 0
+        with pgb.ProgressBar(max_value=len(texts)) as bar:
+            for text in texts:
+                vec = []
+                text = text.split()
+                for t in text:
+                    try:
+                        vec.append(self.embedding_dict[t.lower()])
+                    except KeyError:
+                        pass
+                ## There are no matched words
+                if len(vec) == 0:
+                    print("len 0 vec")
+                    self.word_vec.append(np.zeros((100)))
+                else:
+                    #print(np.array(vec))
+                    #print(np.array(vec).shape)
+                    sentence = self.sentence_vec(np.array(vec))
+                    #print(sentence)
+                    #print(sentence.shape)
+                    self.word_vec.append(sentence)
+                i += 1
+                bar.update(i)
+        self.word_vec = np.array(self.word_vec)
+        print(self.word_vec.shape)
+        
     def embedding(self, texts, num_words=None, latent_dim=16):
         """
         param: texts - A list of texts
@@ -40,24 +87,23 @@ class embeddedText():
         
         self.embedding_model = tfkl.Embedding(self.num_words, self.latent_dim)
         
-        self.word_vec = []
-        i = 0
-        with pgb.ProgressBar(max_value=len(self.vectors)) as bar:
-            for v in self.vectors:
-                self.word_vec.append(self.sentence_vec(self.embedding_model(np.array(v)))) 
-                i += 1
-                bar.update(i)
-        self.word_vec = np.array(self.word_vec)
-        s = self.word_vec.shape
-        self.word_vec = self.word_vec.reshape(s[0], s[-1])
-        self.word_vec = self.mask_nan(self.word_vec)
+        #i = 0
+        #with pgb.ProgressBar(max_value=len(texts)) as bar:
+        #    for v in self.vectors:
+        #        self.word_vec.append(self.sentence_vec(self.embedding_model(np.array(v)))) 
+        #        i += 1
+        #        bar.update(i)
+        #self.word_vec = np.array(self.word_vec)
+        #s = self.word_vec.shape
+        #self.word_vec = self.word_vec.reshape(s[0], s[-1])
+        #self.word_vec = self.mask_nan(self.word_vec)
         
     @staticmethod
     def sentence_vec(sentence_arr):
         """
         param: sentence_arr - A numpy array with wordvectors
         """
-        sentence_sum = np.sum(sentence_arr, axis=1)
+        sentence_sum = np.sum(sentence_arr, axis=0)
         norm = np.linalg.norm(sentence_sum)
         return sentence_sum/norm 
     
@@ -95,6 +141,7 @@ class amazoneText(embeddedText):
         __init__ : file_name = 
     """
     def __init__(self, file_name):
+        super().__init__()
         self.scores = []
         self.reviews = []
         self.raw_title = []
@@ -126,7 +173,7 @@ class amazoneText(embeddedText):
                 i += 1
                 bar.update(i)
         
-        self.embedding(self.reviews, 50000, 32)
+        #self.glove_embedding(self.reviews)#, 50000, 32)
     
     @staticmethod
     def clean_html(text):

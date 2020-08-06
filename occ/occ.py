@@ -137,9 +137,9 @@ class occ():
         elif model == 'isolationForest':
             self.model = sklearn.ensemble.IsolationForest(contamination=nu)
         elif model == 'autoEncoder':
-            self.model = AutoEncoderOOD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs)
+            self.model = AutoEncoderOOD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
         elif model == 'vae':
-            self.model = VAE_ODD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs)
+            self.model = VAE_ODD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
         else:
             print("There is no such model type {}".format(model))
         
@@ -448,21 +448,22 @@ class ensemble(abstract_occ_model):
 
     
 class AutoEncoderOOD(abstract_occ_model):
-    def __init__(self, hidden_neurons, nu, epochs):
-        self.model = AutoEncoder(hidden_neurons=hidden_neurons, contamination=nu, epochs=epochs)
+    def __init__(self, hidden_neurons, nu, epochs, batch_size=32):
+        self.model = AutoEncoder(hidden_neurons=hidden_neurons, contamination=nu, epochs=epochs, batch_size=batch_size)
         
     def fit(self, X):
         self.model.fit(X)
     
     def predict(self, X):
-        return self.model.predict(X)
+        prediction = self.model.predict(X)
+        return np.where(prediction==0.0, 1 , np.where(prediction==1.0, -1, prediction))
     
     def score_samples(self, X):
         return -self.model.decision_function(X)
     
     
 class VAE_ODD(AutoEncoderOOD):
-    def __init__(self, hidden_neurons, nu, epochs):
+    def __init__(self, hidden_neurons, nu, epochs, batch_size=32):
         if len(hidden_neurons) % 2 == 0:
             print("The number of layers must be an odd number(2n+1).")
             sys.exit()
@@ -473,5 +474,6 @@ class VAE_ODD(AutoEncoderOOD):
                          decoder_neurons=decoder,
                          latent_dim=latent,
                          contamination=nu,
-                         epochs=epochs
+                         epochs=epochs,
+                         batch_size=batch_size
                         )
