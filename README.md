@@ -1,3 +1,4 @@
+
 # OneClassClassifier
 
 Outlier detection using [One-class classifier](https://dongpin.data.blog/2020/07/30/anomaly-detection-with-occone-class-classification/). 
@@ -57,5 +58,17 @@ ocsvm.X = some_np_array
 ocsvm.train(model='isolationForest', sampling=0.1) ## Only 10% of data will be used for training
 ```
 
+### Implemented Models
+```python
+occ = occ()
+occ.X = some_np_array
+occ.train(model='SOMEMODEL')
+```
 
-
+ - deepsvdd : Deep-SVDD; [Deep One-Class Classification](http://proceedings.mlr.press/v80/ruff18a.html) [ICML2018; Ruff, Lukas *et al.,*] ; Tensorflow2 implementation
+ - autoEncoder : AutoEncoder and reconstruction loss; [pyod](https://github.com/yzhao062/pyod) library
+ - vae : Variational AutoEncoder and reconstruction loss; [pyod](https://github.com/yzhao062/pyod) library
+ - isoForest : Isolation Forest; [Isolation Forest](https://ieeexplore.ieee.org/abstract/document/4781136/?casa_token=Cbf5YrMZKXcAAAAA:90G4z0yaa-0TbmIbDsQ0sPaj0oXOXWpevsK4PDn8YnV_EAL_yfOfxiYZo7xo2zKm5asJIDiovz0)[IEEE data mining conf 2008; Liu, Fei Tony, Kai Ming Ting, and Zhi-Hua Zhou.]; scikit-learn library
+ - ocnn : One-Class Neural Networks; [Anomaly Detection Using One-Class Neural Networks](https://arxiv.org/abs/1802.06360) [Chalapathy, R., Menon, A. K., & Chawla, S.]; Tensorflow2 implementation
+ - ocsvm : One-Class SVM; 
+ [Support Vector Method for Novelty Detection] (http://papers.nips.cc/paper/1723-support-vector-method-for-novelty-detection.pdf) [NIPS2000; Schölkopf, Bernhard, *et al.*]; scikit-learn library
