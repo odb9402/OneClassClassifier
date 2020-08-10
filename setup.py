@@ -19,6 +19,6 @@ setuptools.setup(
     ],
     dependencies=['pyod','tensorflow>=2.0.0','numpy','scipy','pandas','sklearn','pydot','graphviz',
                  'matplotlib','tensorflow_datasets','tensorflow_probability','suod','progressbar2'],
-    packages=['occ.preprocessing','occ'],
+    packages=['occ.preprocessing','occ','occ.models'],
     python_requires='>=3.6',
 )
