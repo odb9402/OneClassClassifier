@@ -71,4 +71,4 @@ occ.train(model='SOMEMODEL')
  - isoForest : Isolation Forest; [Isolation Forest](https://ieeexplore.ieee.org/abstract/document/4781136/?casa_token=Cbf5YrMZKXcAAAAA:90G4z0yaa-0TbmIbDsQ0sPaj0oXOXWpevsK4PDn8YnV_EAL_yfOfxiYZo7xo2zKm5asJIDiovz0)[IEEE data mining conf 2008; Liu, Fei Tony, Kai Ming Ting, and Zhi-Hua Zhou.]; scikit-learn library
  - ocnn : One-Class Neural Networks; [Anomaly Detection Using One-Class Neural Networks](https://arxiv.org/abs/1802.06360) [Chalapathy, R., Menon, A. K., & Chawla, S.]; Tensorflow2 implementation
  - ocsvm : One-Class SVM; 
- [Support Vector Method for Novelty Detection] (http://papers.nips.cc/paper/1723-support-vector-method-for-novelty-detection.pdf) [NIPS2000; Schölkopf, Bernhard, *et al.*]; scikit-learn library
+ [Support Vector Method for Novelty Detection](http://papers.nips.cc/paper/1723-support-vector-method-for-novelty-detection.pdf) [NIPS2000; Schölkopf, Bernhard, *et al.*]; scikit-learn library
