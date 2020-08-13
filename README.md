@@ -72,3 +72,7 @@ occ.train(model='SOMEMODEL')
  - ocnn : One-Class Neural Networks; [Anomaly Detection Using One-Class Neural Networks](https://arxiv.org/abs/1802.06360) [Chalapathy, R., Menon, A. K., & Chawla, S.]; Tensorflow2 implementation
  - ocsvm : One-Class SVM; 
  [Support Vector Method for Novelty Detection](http://papers.nips.cc/paper/1723-support-vector-method-for-novelty-detection.pdf) [NIPS2000; Schölkopf, Bernhard, *et al.*]; scikit-learn library
+ 
+ 
+### Notice
+ - This module needs the Tensorflow 2.X.X version.
