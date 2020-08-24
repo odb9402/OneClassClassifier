@@ -39,7 +39,7 @@ class embeddedText():
         return: None
         """
         self.embedding_dict = dict()
-        glove_file = open(file)
+        glove_file = open(file, encoding='utf-8')
         for line in glove_file:
             word_vector = line.split()
             word = word_vector[0]

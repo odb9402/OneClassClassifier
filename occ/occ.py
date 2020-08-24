@@ -22,6 +22,7 @@ from sklearn.preprocessing import Normalizer
 from sklearn.base import BaseEstimator, ClassifierMixin
 
 from pyod.models.iforest import IForest
+from pyod.models.knn import KNN
 from numpy import ndarray
 from typing import Any
 from typing import Optional
@@ -81,12 +82,18 @@ class occ():
         
         """
         data = pd.read_csv(file_name, header=None, **kwargs)
+        self.X = data[range(data.shape[1])].values
         if Y:
-            self.X = data[range(data.shape[1]-1)].values
             self.Y = data[data.shape[1]-1].to_numpy().reshape([data.shape[0],1])
         else:
-            self.X = data[range(data.shape[1])].values
-    
+            pass
+
+    def load_data_npz(self, file_name, Y=False):
+        self.X = np.load(file_name)
+        if not Y:
+            self.Y = np.load(Y)
+        else:
+            pass
         
     def train(self, model='ocsvm', data=None, sampling=False, **kwargs):
         # type: (str, Optional[Any], bool, **Any) -> None
@@ -108,7 +115,10 @@ class occ():
         nu = 0.1
         hidden_neurons = None 
         known_normal = False
-        
+        kernel_epochs = 50
+        radius_epochs = 100
+        neighbors = 10
+
         for k, v in kwargs.items():
             if 'kernel' == k:
                 kernel_set = v
@@ -124,6 +134,12 @@ class occ():
                 hidden_neurons = v
             if 'known_normal' == k:
                 known_normal = v
+            if 'kernel_epochs' == k:
+                kernel_epochs = v
+            if 'radius_epochs' == k:
+                radius_epochs = v
+            if 'neighbors' == k:
+                neighbors = v
                 
         if model=='ocsvm':
             self.model = sklearn.svm.OneClassSVM(gamma=gamma_set, kernel=kernel_set, nu=nu)
@@ -131,15 +147,17 @@ class occ():
             self.model = ocnn(len(data[0]), epochs=epochs, nu=nu, batch_size=batch_size)
         elif model == 'ensemble':
             self.model = ensemble(nu=nu)
-        elif model == 'isolationForest':
+        elif model == 'isoForest':
             self.model = sklearn.ensemble.IsolationForest(contamination=nu)
         elif model == 'autoEncoder':
-            self.model = AutoEncoderOOD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
+            self.model = AutoEncoderODD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
         elif model == 'vae':
             self.model = VAE_ODD(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
         elif model == 'deepsvdd':
             self.model = deep_SVDD(nu=nu, known_normal=known_normal, hidden_neurons=hidden_neurons
-                                ,epochs=epochs, batch_size=batch_size)
+                                ,kernel_epochs=kernel_epochs, radius_epochs=radius_epochs, batch_size=batch_size)
+        elif model == 'knn':
+            self.model = KNN(contamination=nu, n_neighbors=neighbors)
         else:
             print("There is no such model type {}".format(model))
         

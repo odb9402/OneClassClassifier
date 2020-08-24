@@ -17,8 +17,8 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    dependencies=['pyod','tensorflow>=2.0.0','numpy','scipy','pandas','sklearn','pydot','graphviz',
-                 'matplotlib','tensorflow_datasets','tensorflow_probability','suod','progressbar2'],
+    dependencies=['pyod','tensorflow>=2.2.0','numpy','scipy','pandas','sklearn','pydot','graphviz',
+                 'matplotlib','tensorflow_datasets','tensorflow_probability','suod','progressbar2','keras'],
     packages=['occ.preprocessing','occ','occ.models'],
     python_requires='>=3.6',
 )
