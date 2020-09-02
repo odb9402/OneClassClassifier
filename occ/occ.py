@@ -11,8 +11,6 @@ import pandas as pd
 import random
 import sys
 
-from abc import *
-
 from scipy import io
 
 from sklearn.model_selection import train_test_split as train_test_split
@@ -27,6 +25,7 @@ from numpy import ndarray
 from typing import Any
 from typing import Optional
 
+from occ.models.twolineAE import twolineAE
 from occ.models.ensemble import ensemble
 from occ.models.ocnn import ocnn
 from occ.models.AutoEncoderODD import AutoEncoderODD
@@ -82,7 +81,7 @@ class occ():
         
         """
         data = pd.read_csv(file_name, header=None, **kwargs)
-        self.X = data[range(data.shape[1])].values
+        self.X = data[range(data.shape[1]-1)].values
         if Y:
             self.Y = data[data.shape[1]-1].to_numpy().reshape([data.shape[0],1])
         else:
@@ -122,23 +121,23 @@ class occ():
         for k, v in kwargs.items():
             if 'kernel' == k:
                 kernel_set = v
-            if 'gamma' == k:
+            elif 'gamma' == k:
                 gamma_set = v
-            if 'epochs' == k:
+            elif 'epochs' == k:
                 epochs = v
-            if 'nu' == k:
+            elif 'nu' == k:
                 nu = v
-            if 'batch_size' == k:
+            elif 'batch_size' == k:
                 batch_size = v
-            if 'hidden_neurons' == k:
+            elif 'hidden_neurons' == k:
                 hidden_neurons = v
-            if 'known_normal' == k:
+            elif 'known_normal' == k:
                 known_normal = v
-            if 'kernel_epochs' == k:
+            elif 'kernel_epochs' == k:
                 kernel_epochs = v
-            if 'radius_epochs' == k:
+            elif 'radius_epochs' == k:
                 radius_epochs = v
-            if 'neighbors' == k:
+            elif 'neighbors' == k:
                 neighbors = v
                 
         if model=='ocsvm':
@@ -158,6 +157,8 @@ class occ():
                                 ,kernel_epochs=kernel_epochs, radius_epochs=radius_epochs, batch_size=batch_size)
         elif model == 'knn':
             self.model = KNN(contamination=nu, n_neighbors=neighbors)
+        elif model == 'twolineAE':
+            self.model = twolineAE(nu=nu, hidden_neurons=hidden_neurons, epochs=epochs, batch_size=batch_size)
         else:
             print("There is no such model type {}".format(model))
         

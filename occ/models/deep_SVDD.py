@@ -57,7 +57,7 @@ class deep_SVDD(abstract_occ_model):
         positive(normal) samples, X should be known normal samples.
         
         """
-        self.train_X, self.test_X = train_test_split(X, test_size=0.2)
+        self.train_X, self.test_X = train_test_split(X, test_size=0.01)
         self.features = X.shape[-1]
         self.kernel, self.__radius_layer = self.__build_deep_kernel_dense(self.hidden_neurons)
         
@@ -131,11 +131,12 @@ class deep_SVDD(abstract_occ_model):
         input_layer = tfk.Input(shape=(self.features))
         
         regularizer = lambda W: self.__zero_block_regularizer(W, add_non_zero=False, add_l2=True
-                                                              ,non_zero_weight= 0.001, l2_weight=0.001)
+                                                              ,non_zero_weight= 0.001, l2_weight=0.1)
         
         kernel_layers = []
         func = tfkl.Dense(hidden_neurons[0], activation=None,
                                      kernel_regularizer=regularizer, use_bias=False,
+                                     input_shape=(self.features,),
                                      kernel_initializer='glorot_uniform')(input_layer)
         if batch_norm:
             func = tfkl.BatchNormalization(center=False)(func)
@@ -189,7 +190,7 @@ class deep_SVDD(abstract_occ_model):
         """
         reg = 0. 
         if add_non_zero:
-            reg = reg + tf.math.divide(self.non_zero_regularizer,tf.norm(weights, ord=2))
+            reg = reg + tf.math.divide(non_zero_weight, tf.norm(weights, ord=2))
         if add_l2:
             reg = reg + l2_weight*tf.norm(weights, ord=2)
         return reg

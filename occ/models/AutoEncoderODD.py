@@ -3,8 +3,13 @@ import numpy as np
 from pyod.models.auto_encoder import AutoEncoder
 
 class AutoEncoderODD(abstract_occ_model):
-    def __init__(self, hidden_neurons, nu, epochs, batch_size=32):
-        self.model = AutoEncoder(hidden_neurons=hidden_neurons, contamination=nu, epochs=epochs, batch_size=batch_size, validation_size=0)
+    def __init__(self, hidden_neurons, nu, epochs, batch_size=32, output_activation='sigmoid'):
+        self.model = AutoEncoder(hidden_neurons=hidden_neurons
+            ,contamination=nu
+            ,epochs=epochs
+            ,batch_size=batch_size
+            ,validation_size=0
+            ,output_activation=output_activation)
         
     def fit(self, X):
         self.model.fit(X)
